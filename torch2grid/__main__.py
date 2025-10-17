@@ -10,6 +10,7 @@ from torch2grid.histogram import (
     create_histogram_overview,
     compare_layer_statistics
 )
+from torch2grid.conv_visualizer import visualize_all_conv_layers
 
 
 def main():
@@ -18,6 +19,7 @@ def main():
         print("\nOptions:")
         print("  --layers        Visualize each layer separately")
         print("  --histogram     Generate weight distribution histograms")
+        print("  --conv          Visualize convolution kernels")
         print("  --stats         Print layer statistics comparison")
         print("  --interactive   Interactive layer selection mode")
         print("  --help          Show this help message")
@@ -31,6 +33,7 @@ def main():
         print("\nOptions:")
         print("  --layers        Visualize each layer separately and create overview")
         print("  --histogram     Generate weight distribution histograms for all layers")
+        print("  --conv          Visualize convolution kernels (filters)")
         print("  --stats         Print statistical comparison of all layers")
         print("  --interactive   Interactive mode for selecting specific layers")
         print("  --help, -h      Show this help message")
@@ -38,9 +41,10 @@ def main():
         print("  python -m torch2grid model.pth")
         print("  python -m torch2grid model.pth --layers")
         print("  python -m torch2grid model.pth --histogram")
+        print("  python -m torch2grid model.pth --conv")
         print("  python -m torch2grid model.pth --stats")
         print("  python -m torch2grid model.pth --interactive")
-        print("  python -m torch2grid model.pth --layers --histogram --stats")
+        print("  python -m torch2grid model.pth --layers --histogram --conv --stats")
         return
 
     obj = load_torch_model(path)
@@ -49,6 +53,10 @@ def main():
     # Handle stats flag (can be combined with other flags)
     if "--stats" in sys.argv:
         compare_layer_statistics(tensors)
+    
+    # Handle conv flag (can be combined with other flags)
+    if "--conv" in sys.argv:
+        visualize_all_conv_layers(tensors)
     
     # Handle primary visualization modes
     if "--interactive" in sys.argv or "-i" in sys.argv:

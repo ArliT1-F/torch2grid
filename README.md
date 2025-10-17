@@ -8,6 +8,7 @@ A lightweight Python tool for visualizing PyTorch model weights and architecture
 - **Layer-by-Layer Visualization**: Generate separate visualizations for each layer
 - **Layer Overview**: Multi-panel view showing all layers at once
 - **Weight Distribution Histograms**: Analyze weight distributions with detailed statistics
+- **Convolution Kernel Visualization**: Specialized visualization for CNN filters
 - **Interactive Mode**: CLI interface for selective layer visualization
 - **Statistical Analysis**: Compare layer statistics (mean, std, min, max, sparsity)
 - **Headless Support**: Works in environments without GUI (Codespaces, SSH, CI/CD)
@@ -55,6 +56,23 @@ Generates weight distribution histograms for each layer showing:
 **Combine with other visualizations:**
 ```bash
 python -m torch2grid model.pth --layers --histogram --stats
+```
+
+### Convolution Kernel Visualization
+
+```bash
+python -m torch2grid model.pth --conv
+```
+
+Automatically detects and visualizes convolution layers:
+- Displays filters as image grids
+- Shows kernel patterns and learned features
+- Supports 2D and 1D convolutions
+- Averages across input channels for clarity
+
+**Combine with other modes:**
+```bash
+python -m torch2grid model.pth --layers --conv --histogram
 ```
 
 ### Statistical Analysis
@@ -124,6 +142,7 @@ from torch2grid.histogram import (
     create_histogram_overview,
     compare_layer_statistics
 )
+from torch2grid.conv_visualizer import visualize_all_conv_layers
 
 # Load and inspect model
 model = load_torch_model("model.pth")
@@ -138,6 +157,9 @@ create_layer_overview(tensors, output_path="grids/overview.png")
 # Generate histograms
 visualize_all_histograms(tensors, output_dir="grids/histograms")
 create_histogram_overview(tensors, output_path="grids/histogram_overview.png")
+
+# Visualize convolution kernels
+visualize_all_conv_layers(tensors, output_dir="grids/conv_kernels")
 
 # Print statistics
 compare_layer_statistics(tensors)
@@ -182,12 +204,32 @@ Histogram visualization helps analyze the statistical properties of weights in e
 - **Distribution analysis**: Compare weight distributions across layers
 - **Model debugging**: Identify unusual distributions that may indicate issues
 
+## Convolution Kernel Visualization
+
+Specialized visualization for convolutional neural networks (CNNs) that displays learned filters:
+
+**Features:**
+- Automatic detection of convolution layers
+- Grid layout showing individual filters
+- Supports 2D convolutions (images) and 1D convolutions (sequences)
+- Averages across input channels for simplified view
+- Shows kernel patterns and edge detectors
+
+**Use cases:**
+- **Feature learning inspection**: See what patterns the model has learned
+- **Architecture validation**: Verify conv layers are learning diverse features
+- **Transfer learning**: Compare filters between pre-trained and fine-tuned models
+- **Model interpretation**: Understand what low-level features are being extracted
+- **Debug initialization**: Check if filters are properly initialized vs. all zeros/same
+
+The visualization displays each output channel as a tile, making it easy to identify redundant or dead filters.
+
 ## TODO: Upcoming Features
 
 - [x] Interactive mode with layer selection
 - [x] Weight distribution histograms per layer
 - [x] Weight statistics dashboard (min/max/mean/std)
-- [ ] Specialized convolution kernel visualization
+- [x] Specialized convolution kernel visualization
 - [ ] Export to multiple formats (SVG, PDF)
 - [ ] Dead neuron detection and reporting
 - [ ] Gradient visualization support
@@ -211,6 +253,7 @@ torch2grid/
 ├── visualizer.py        # Single unified grid visualization
 ├── layer_visualizer.py  # Layer-by-layer visualization
 ├── histogram.py         # Weight distribution histograms
+├── conv_visualizer.py   # Convolution kernel visualization
 └── interactive.py       # Interactive CLI interface
 ```
 
