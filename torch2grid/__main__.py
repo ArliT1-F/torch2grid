@@ -5,6 +5,11 @@ from torch2grid.transformer import to_neutral_grid
 from torch2grid.visualizer import visualize_grid
 from torch2grid.layer_visualizer import visualize_layers, create_layer_overview
 from torch2grid.interactive import interactive_mode
+from torch2grid.histogram import (
+    visualize_all_histograms,
+    create_histogram_overview,
+    compare_layer_statistics
+)
 
 
 def main():
@@ -12,6 +17,8 @@ def main():
         print("Usage: python -m torch2grid <model.pt|model.pth|model.pkl> [options]")
         print("\nOptions:")
         print("  --layers        Visualize each layer separately")
+        print("  --histogram     Generate weight distribution histograms")
+        print("  --stats         Print layer statistics comparison")
         print("  --interactive   Interactive layer selection mode")
         print("  --help          Show this help message")
         return
@@ -23,19 +30,35 @@ def main():
         print("\nUsage: python -m torch2grid <model.pt|model.pth|model.pkl> [options]")
         print("\nOptions:")
         print("  --layers        Visualize each layer separately and create overview")
+        print("  --histogram     Generate weight distribution histograms for all layers")
+        print("  --stats         Print statistical comparison of all layers")
         print("  --interactive   Interactive mode for selecting specific layers")
         print("  --help, -h      Show this help message")
         print("\nExamples:")
         print("  python -m torch2grid model.pth")
         print("  python -m torch2grid model.pth --layers")
+        print("  python -m torch2grid model.pth --histogram")
+        print("  python -m torch2grid model.pth --stats")
         print("  python -m torch2grid model.pth --interactive")
+        print("  python -m torch2grid model.pth --layers --histogram --stats")
         return
 
     obj = load_torch_model(path)
     tensors = inspect_torch_object(obj)
     
+    # Handle stats flag (can be combined with other flags)
+    if "--stats" in sys.argv:
+        compare_layer_statistics(tensors)
+    
+    # Handle primary visualization modes
     if "--interactive" in sys.argv or "-i" in sys.argv:
         interactive_mode(tensors)
+    elif "--histogram" in sys.argv:
+        visualize_all_histograms(tensors)
+        create_histogram_overview(tensors)
+        if "--layers" in sys.argv:
+            visualize_layers(tensors)
+            create_layer_overview(tensors)
     elif "--layers" in sys.argv:
         visualize_layers(tensors)
         create_layer_overview(tensors)
