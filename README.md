@@ -1,2 +1,2 @@
 # torch2grid
-A tool used to visualise torch models.
+Torch2Grid is a simple tool used to visualize the map brain of an ai model
