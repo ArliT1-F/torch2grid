@@ -13,7 +13,7 @@ ENV/
 .venv/
 
 # Generated visualizations
-grids/
+# grids/
 
 # Model files
 # *.pth
