@@ -5,6 +5,7 @@ __pycache__/
 *.so
 .Python
 *.pyc
+*cpython-*
 
 # Virtual environments
 venv/
