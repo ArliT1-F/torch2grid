@@ -11,6 +11,7 @@ from torch2grid.histogram import (
     compare_layer_statistics
 )
 from torch2grid.conv_visualizer import visualize_all_conv_layers
+from torch2grid.plugins.registry import get_registry
 
 
 def main():
@@ -22,10 +23,25 @@ def main():
         print("  --conv          Visualize convolution kernels")
         print("  --stats         Print layer statistics comparison")
         print("  --interactive   Interactive layer selection mode")
+        print("  --plugin NAME   Use specific transformer plugin")
+        print("  --list-plugins  List available plugins")
+        print("  --load-plugin FILE  Load custom plugin from file")
         print("  --help          Show this help message")
         return
     
     path = sys.argv[1]
+    
+    # Handle plugin listing
+    if "--list-plugins" in sys.argv:
+        registry = get_registry()
+        plugins = registry.list_plugins()
+        print("\nAvailable transformer plugins:")
+        print("-" * 60)
+        for name in plugins:
+            desc = registry.get_plugin_info(name)
+            print(f"  {name:<20} {desc}")
+        print("-" * 60)
+        return
     
     if "--help" in sys.argv or "-h" in sys.argv:
         print("torch2grid - PyTorch Model Visualization Tool")
@@ -36,6 +52,9 @@ def main():
         print("  --conv          Visualize convolution kernels (filters)")
         print("  --stats         Print statistical comparison of all layers")
         print("  --interactive   Interactive mode for selecting specific layers")
+        print("  --plugin NAME   Use specific transformer plugin (e.g., spiral, normalized)")
+        print("  --list-plugins  List all available transformer plugins")
+        print("  --load-plugin FILE  Load custom plugin from Python file")
         print("  --help, -h      Show this help message")
         print("\nExamples:")
         print("  python -m torch2grid model.pth")
@@ -43,12 +62,32 @@ def main():
         print("  python -m torch2grid model.pth --histogram")
         print("  python -m torch2grid model.pth --conv")
         print("  python -m torch2grid model.pth --stats")
+        print("  python -m torch2grid model.pth --plugin spiral")
+        print("  python -m torch2grid model.pth --load-plugin my_plugin.py")
+        print("  python -m torch2grid model.pth --list-plugins")
         print("  python -m torch2grid model.pth --interactive")
         print("  python -m torch2grid model.pth --layers --histogram --conv --stats")
         return
+    
+    # Load custom plugins if specified
+    registry = get_registry()
+    for i, arg in enumerate(sys.argv):
+        if arg == "--load-plugin" and i + 1 < len(sys.argv):
+            plugin_file = sys.argv[i + 1]
+            try:
+                registry.load_from_file(plugin_file)
+            except Exception as e:
+                print(f"Error loading plugin from {plugin_file}: {e}")
 
     obj = load_torch_model(path)
     tensors = inspect_torch_object(obj)
+    
+    # Get plugin name if specified
+    plugin_name = None
+    for i, arg in enumerate(sys.argv):
+        if arg == "--plugin" and i + 1 < len(sys.argv):
+            plugin_name = sys.argv[i + 1]
+            break
     
     # Handle stats flag (can be combined with other flags)
     if "--stats" in sys.argv:
@@ -71,8 +110,9 @@ def main():
         visualize_layers(tensors)
         create_layer_overview(tensors)
     else:
-        grid = to_neutral_grid(tensors)
-        visualize_grid(grid)
+        grid = to_neutral_grid(tensors, plugin_name=plugin_name)
+        title = f"Neural Grid ({plugin_name})" if plugin_name else "Neural Grid"
+        visualize_grid(grid, title=title)
 
 
 if __name__ == "__main__":

@@ -9,6 +9,7 @@ A lightweight Python tool for visualizing PyTorch model weights and architecture
 - **Layer Overview**: Multi-panel view showing all layers at once
 - **Weight Distribution Histograms**: Analyze weight distributions with detailed statistics
 - **Convolution Kernel Visualization**: Specialized visualization for CNN filters
+- **Plugin System**: Extensible architecture for custom transformation algorithms
 - **Interactive Mode**: CLI interface for selective layer visualization
 - **Statistical Analysis**: Compare layer statistics (mean, std, min, max, sparsity)
 - **Headless Support**: Works in environments without GUI (Codespaces, SSH, CI/CD)
@@ -73,6 +74,32 @@ Automatically detects and visualizes convolution layers:
 **Combine with other modes:**
 ```bash
 python -m torch2grid model.pth --layers --conv --histogram
+```
+
+### Transformer Plugins
+
+Use different algorithms to transform weights into grids:
+
+```bash
+# List available plugins
+python -m torch2grid model.pth --list-plugins
+
+# Use a specific plugin
+python -m torch2grid model.pth --plugin spiral
+python -m torch2grid model.pth --plugin normalized
+python -m torch2grid model.pth --plugin layer_separated
+```
+
+**Built-in plugins:**
+- `flatten` (default) - Simple flattening into square grid
+- `spiral` - Arranges weights in spiral pattern from center
+- `normalized` - Normalizes weights to [0, 1] before visualization
+- `layer_weighted` - Larger layers get more space
+- `layer_separated` - Separates layers with visible boundaries
+
+**Load custom plugins:**
+```bash
+python -m torch2grid model.pth --load-plugin my_custom_transformer.py
 ```
 
 ### Statistical Analysis
@@ -224,12 +251,116 @@ Specialized visualization for convolutional neural networks (CNNs) that displays
 
 The visualization displays each output channel as a tile, making it easy to identify redundant or dead filters.
 
+## Plugin System
+
+The plugin system allows you to create custom transformers for converting model weights into 2D grids.
+
+### Creating Custom Plugins
+
+Create a Python file with a class that inherits from `TransformerPlugin`:
+
+```python
+# my_plugin.py
+from torch2grid.plugins.base import TransformerPlugin
+import numpy as np
+
+class MyCustomTransformer(TransformerPlugin):
+    @property
+    def name(self) -> str:
+        return "my_custom"
+    
+    @property
+    def description(self) -> str:
+        return "My custom transformation algorithm"
+    
+    def transform(self, tensors: dict) -> np.ndarray:
+        # Your custom logic here
+        flat_values = []
+        for name, arr in tensors.items():
+            if arr is not None:
+                flat_values.extend(arr.flatten())
+        
+        # Create your custom grid layout
+        size = int(np.ceil(np.sqrt(len(flat_values))))
+        grid = np.zeros((size, size))
+        
+        # Fill grid with your algorithm
+        for i, val in enumerate(flat_values[:size*size]):
+            grid[i // size, i % size] = val
+        
+        return grid
+```
+
+**Load and use your plugin:**
+```bash
+python -m torch2grid model.pth --load-plugin my_plugin.py --plugin my_custom
+```
+
+### Plugin API
+
+The `TransformerPlugin` base class provides these methods:
+
+**Required methods:**
+- `name` (property): Unique identifier for the plugin
+- `transform(tensors)`: Main transformation logic
+
+**Optional methods:**
+- `description` (property): Human-readable description
+- `can_handle(tensors)`: Check if plugin is compatible with tensors
+- `preprocess(tensors)`: Filter/modify tensors before transformation
+- `postprocess(grid)`: Modify grid after transformation
+
+**Example with preprocessing:**
+```python
+class FilteredTransformer(TransformerPlugin):
+    @property
+    def name(self) -> str:
+        return "weights_only"
+    
+    def preprocess(self, tensors: dict) -> dict:
+        # Only keep weight tensors, skip biases
+        return {k: v for k, v in tensors.items() if 'weight' in k}
+    
+    def transform(self, tensors: dict) -> np.ndarray:
+        # Transform logic...
+        pass
+```
+
+### Programmatic Plugin Usage
+
+```python
+from torch2grid.plugins.registry import get_registry
+from torch2grid.plugins.base import TransformerPlugin
+
+# Get registry
+registry = get_registry()
+
+# List plugins
+plugins = registry.list_plugins()
+print(f"Available: {plugins}")
+
+# Load custom plugin
+registry.load_from_file("my_plugin.py")
+
+# Use plugin
+plugin = registry.get("my_custom")
+grid = plugin(tensors)
+
+# Register plugin instance
+class MyPlugin(TransformerPlugin):
+    # ... implementation ...
+    pass
+
+registry.register(MyPlugin())
+```
+
 ## TODO: Upcoming Features
 
 - [x] Interactive mode with layer selection
 - [x] Weight distribution histograms per layer
 - [x] Weight statistics dashboard (min/max/mean/std)
 - [x] Specialized convolution kernel visualization
+- [x] Plugin system for custom transformers
 - [ ] Export to multiple formats (SVG, PDF)
 - [ ] Dead neuron detection and reporting
 - [ ] Gradient visualization support
@@ -238,7 +369,6 @@ The visualization displays each output channel as a tile, making it easy to iden
 - [ ] Progress bar for large models
 - [ ] Multiple colormap options
 - [ ] Batch processing for multiple models
-- [ ] Plugin system for custom transformers
 - [ ] Config file support (YAML/JSON)
 - [ ] Web viewer for interactive exploration
 
@@ -254,7 +384,12 @@ torch2grid/
 ├── layer_visualizer.py  # Layer-by-layer visualization
 ├── histogram.py         # Weight distribution histograms
 ├── conv_visualizer.py   # Convolution kernel visualization
-└── interactive.py       # Interactive CLI interface
+├── interactive.py       # Interactive CLI interface
+└── plugins/             # Plugin system
+    ├── __init__.py      # Plugin exports
+    ├── base.py          # TransformerPlugin base class
+    ├── registry.py      # Plugin registry and loader
+    └── builtin.py       # Built-in transformer plugins
 ```
 
 ## Contributing
