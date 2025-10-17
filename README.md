@@ -10,6 +10,9 @@ A lightweight Python tool for visualizing PyTorch model weights and architecture
 - **Weight Distribution Histograms**: Analyze weight distributions with detailed statistics
 - **Convolution Kernel Visualization**: Specialized visualization for CNN filters
 - **Plugin System**: Extensible architecture for custom transformation algorithms
+- **Dead Neuron Detection**: Identify inactive neurons with near-zero weights
+- **Gradient Visualization**: Analyze gradient flow and detect vanishing/exploding gradients
+- **Multi-Format Export**: Export visualizations to PNG, SVG, and PDF formats
 - **Interactive Mode**: CLI interface for selective layer visualization
 - **Statistical Analysis**: Compare layer statistics (mean, std, min, max, sparsity)
 - **Headless Support**: Works in environments without GUI (Codespaces, SSH, CI/CD)
@@ -102,6 +105,72 @@ python -m torch2grid model.pth --plugin layer_separated
 python -m torch2grid model.pth --load-plugin my_custom_transformer.py
 ```
 
+### Dead Neuron Detection
+
+```bash
+python -m torch2grid model.pth --dead-neurons
+```
+
+Detects neurons with near-zero weights that don't contribute to the model:
+
+```
+Dead Neuron Detection Report
+================================================================================
+Threshold: 1e-06
+Total neurons/channels: 64
+Dead neurons/channels: 3 (4.69%)
+Layers affected: 2/4
+================================================================================
+
+Layer                                       Total     Dead        %
+--------------------------------------------------------------------------------
+conv1.weight                                   16        2    12.50% ⚠️ 
+fc.weight                                      10        1    10.00% ⚠️ 
+--------------------------------------------------------------------------------
+
+✓ 3 dead neuron(s) detected across 2 layer(s).
+```
+
+**Outputs:**
+- Console report with per-layer statistics
+- JSON report saved to `grids/dead_neurons_report.json`
+- Visualization chart showing dead neuron distribution
+
+**Use cases:**
+- Verify model is properly trained
+- Identify overparameterized layers
+- Detect initialization issues
+- Guide model pruning decisions
+
+### Export to Multiple Formats
+
+```bash
+# Export to SVG
+python -m torch2grid model.pth --export svg
+
+# Export to PDF
+python -m torch2grid model.pth --export pdf
+
+# Export to multiple formats
+python -m torch2grid model.pth --export svg,pdf,png
+```
+
+Export visualizations in publication-quality vector formats:
+- **SVG**: Scalable vector graphics for web and presentations
+- **PDF**: High-quality prints and academic papers
+- **PNG**: Standard raster format (default)
+
+**Programmatic export:**
+```python
+from torch2grid.exporter import export_grid_multi_format, export_layers_to_pdf
+
+# Export single grid to multiple formats
+export_grid_multi_format(grid, title="My Model", formats=['svg', 'pdf'])
+
+# Export all layers to multi-page PDF report
+export_layers_to_pdf(tensors, output_path="model_report.pdf")
+```
+
 ### Statistical Analysis
 
 ```bash
@@ -170,6 +239,12 @@ from torch2grid.histogram import (
     compare_layer_statistics
 )
 from torch2grid.conv_visualizer import visualize_all_conv_layers
+from torch2grid.dead_neuron_detector import (
+    detect_dead_neurons,
+    print_dead_neuron_report,
+    visualize_dead_neurons
+)
+from torch2grid.exporter import export_grid_multi_format, export_layers_to_pdf
 
 # Load and inspect model
 model = load_torch_model("model.pth")
@@ -187,6 +262,16 @@ create_histogram_overview(tensors, output_path="grids/histogram_overview.png")
 
 # Visualize convolution kernels
 visualize_all_conv_layers(tensors, output_dir="grids/conv_kernels")
+
+# Detect dead neurons
+report = detect_dead_neurons(tensors)
+print_dead_neuron_report(report)
+visualize_dead_neurons(report)
+
+# Export to multiple formats
+grid = to_neutral_grid(tensors)
+export_grid_multi_format(grid, formats=['svg', 'pdf'])
+export_layers_to_pdf(tensors, output_path="model_report.pdf")
 
 # Print statistics
 compare_layer_statistics(tensors)
@@ -250,6 +335,64 @@ Specialized visualization for convolutional neural networks (CNNs) that displays
 - **Debug initialization**: Check if filters are properly initialized vs. all zeros/same
 
 The visualization displays each output channel as a tile, making it easy to identify redundant or dead filters.
+
+## Gradient Visualization
+
+Visualize and analyze gradients to detect training issues (requires gradients to be computed during training):
+
+**Gradient Flow Analysis:**
+```python
+from torch2grid.gradient_visualizer import (
+    visualize_gradient_flow,
+    analyze_gradient_health,
+    print_gradient_health_report
+)
+
+# During training, collect gradients
+gradients = {}
+for name, param in model.named_parameters():
+    if param.grad is not None:
+        gradients[name] = param.grad
+
+# Analyze gradient health
+analysis = analyze_gradient_health(gradients)
+print_gradient_health_report(analysis)
+
+# Visualize gradient flow across layers
+visualize_gradient_flow(gradients, output_path="grids/gradient_flow.png")
+```
+
+**Gradient Health Report:**
+```
+Gradient Health Report
+================================================================================
+Total layers: 6
+Healthy: 4 (66.7%)
+Vanishing gradients: 2 (33.3%)
+Exploding gradients: 0 (0.0%)
+================================================================================
+
+Layer                                        Mean          Max       Status
+--------------------------------------------------------------------------------
+fc1.weight                                2.34e-08     5.67e-07    ⚠️  VANISH
+fc2.weight                                5.12e-03     1.24e-02           ✓
+--------------------------------------------------------------------------------
+
+⚠️  WARNING: 2 layer(s) with vanishing gradients detected!
+   Consider: gradient clipping, batch normalization, or residual connections
+```
+
+**Features:**
+- Detect vanishing/exploding gradients
+- Visualize gradient flow across layers
+- Compare weights vs gradients side-by-side
+- Export gradient analysis reports
+
+**Use cases:**
+- Debug training issues (vanishing/exploding gradients)
+- Validate gradient flow in deep networks
+- Tune learning rates and optimizer settings
+- Compare gradient patterns across training epochs
 
 ## Plugin System
 
@@ -361,9 +504,9 @@ registry.register(MyPlugin())
 - [x] Weight statistics dashboard (min/max/mean/std)
 - [x] Specialized convolution kernel visualization
 - [x] Plugin system for custom transformers
-- [ ] Export to multiple formats (SVG, PDF)
-- [ ] Dead neuron detection and reporting
-- [ ] Gradient visualization support
+- [x] Export to multiple formats (SVG, PDF)
+- [x] Dead neuron detection and reporting
+- [x] Gradient visualization support
 - [ ] Side-by-side model comparison
 - [ ] Enhanced CLI with arguments (--output, --title, --colormap)
 - [ ] Progress bar for large models
@@ -376,20 +519,23 @@ registry.register(MyPlugin())
 
 ```
 torch2grid/
-├── __main__.py          # CLI entry point
-├── loader.py            # Model loading utilities
-├── inspector.py         # Tensor extraction from models
-├── transformer.py       # Grid transformation logic
-├── visualizer.py        # Single unified grid visualization
-├── layer_visualizer.py  # Layer-by-layer visualization
-├── histogram.py         # Weight distribution histograms
-├── conv_visualizer.py   # Convolution kernel visualization
-├── interactive.py       # Interactive CLI interface
-└── plugins/             # Plugin system
-    ├── __init__.py      # Plugin exports
-    ├── base.py          # TransformerPlugin base class
-    ├── registry.py      # Plugin registry and loader
-    └── builtin.py       # Built-in transformer plugins
+├── __main__.py               # CLI entry point
+├── loader.py                 # Model loading utilities
+├── inspector.py              # Tensor extraction from models
+├── transformer.py            # Grid transformation logic
+├── visualizer.py             # Single unified grid visualization
+├── layer_visualizer.py       # Layer-by-layer visualization
+├── histogram.py              # Weight distribution histograms
+├── conv_visualizer.py        # Convolution kernel visualization
+├── dead_neuron_detector.py   # Dead neuron detection and reporting
+├── gradient_visualizer.py    # Gradient flow visualization and analysis
+├── exporter.py               # Multi-format export (SVG, PDF)
+├── interactive.py            # Interactive CLI interface
+└── plugins/                  # Plugin system
+    ├── __init__.py           # Plugin exports
+    ├── base.py               # TransformerPlugin base class
+    ├── registry.py           # Plugin registry and loader
+    └── builtin.py            # Built-in transformer plugins
 ```
 
 ## Contributing

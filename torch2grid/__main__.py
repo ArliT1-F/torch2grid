@@ -12,6 +12,13 @@ from torch2grid.histogram import (
 )
 from torch2grid.conv_visualizer import visualize_all_conv_layers
 from torch2grid.plugins.registry import get_registry
+from torch2grid.exporter import export_grid_multi_format, export_layers_to_pdf
+from torch2grid.dead_neuron_detector import (
+    detect_dead_neurons,
+    print_dead_neuron_report,
+    save_dead_neuron_report,
+    visualize_dead_neurons
+)
 
 
 def main():
@@ -26,6 +33,8 @@ def main():
         print("  --plugin NAME   Use specific transformer plugin")
         print("  --list-plugins  List available plugins")
         print("  --load-plugin FILE  Load custom plugin from file")
+        print("  --export FORMAT Export visualizations (svg, pdf, png)")
+        print("  --dead-neurons  Detect and report dead neurons")
         print("  --help          Show this help message")
         return
     
@@ -55,6 +64,8 @@ def main():
         print("  --plugin NAME   Use specific transformer plugin (e.g., spiral, normalized)")
         print("  --list-plugins  List all available transformer plugins")
         print("  --load-plugin FILE  Load custom plugin from Python file")
+        print("  --export FORMAT Export to format: svg, pdf (comma-separated for multiple)")
+        print("  --dead-neurons  Detect and report dead neurons in the model")
         print("  --help, -h      Show this help message")
         print("\nExamples:")
         print("  python -m torch2grid model.pth")
@@ -62,11 +73,13 @@ def main():
         print("  python -m torch2grid model.pth --histogram")
         print("  python -m torch2grid model.pth --conv")
         print("  python -m torch2grid model.pth --stats")
+        print("  python -m torch2grid model.pth --dead-neurons")
+        print("  python -m torch2grid model.pth --export svg,pdf")
         print("  python -m torch2grid model.pth --plugin spiral")
         print("  python -m torch2grid model.pth --load-plugin my_plugin.py")
         print("  python -m torch2grid model.pth --list-plugins")
         print("  python -m torch2grid model.pth --interactive")
-        print("  python -m torch2grid model.pth --layers --histogram --conv --stats")
+        print("  python -m torch2grid model.pth --layers --histogram --conv --stats --dead-neurons")
         return
     
     # Load custom plugins if specified
@@ -89,9 +102,24 @@ def main():
             plugin_name = sys.argv[i + 1]
             break
     
+    # Get export formats if specified
+    export_formats = []
+    for i, arg in enumerate(sys.argv):
+        if arg == "--export" and i + 1 < len(sys.argv):
+            formats_str = sys.argv[i + 1]
+            export_formats = [f.strip() for f in formats_str.split(',')]
+            break
+    
     # Handle stats flag (can be combined with other flags)
     if "--stats" in sys.argv:
         compare_layer_statistics(tensors)
+    
+    # Handle dead neuron detection
+    if "--dead-neurons" in sys.argv:
+        report = detect_dead_neurons(tensors)
+        print_dead_neuron_report(report, verbose=True)
+        save_dead_neuron_report(report)
+        visualize_dead_neurons(report)
     
     # Handle conv flag (can be combined with other flags)
     if "--conv" in sys.argv:
@@ -112,7 +140,13 @@ def main():
     else:
         grid = to_neutral_grid(tensors, plugin_name=plugin_name)
         title = f"Neural Grid ({plugin_name})" if plugin_name else "Neural Grid"
-        visualize_grid(grid, title=title)
+        
+        if export_formats:
+            # Export to specified formats
+            export_grid_multi_format(grid, title=title, formats=export_formats)
+        else:
+            # Standard PNG export
+            visualize_grid(grid, title=title)
 
 
 if __name__ == "__main__":

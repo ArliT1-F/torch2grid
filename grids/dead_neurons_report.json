@@ -1,0 +1,33 @@
+{
+  "summary": {
+    "total_neurons": 58,
+    "total_dead": 0,
+    "percentage": 0.0,
+    "layers_affected": 0,
+    "total_layers": 3
+  },
+  "layers": {
+    "conv1.weight": {
+      "total": 16,
+      "dead": 0,
+      "dead_indices": [],
+      "percentage": 0.0,
+      "threshold": 1e-06
+    },
+    "conv2.weight": {
+      "total": 32,
+      "dead": 0,
+      "dead_indices": [],
+      "percentage": 0.0,
+      "threshold": 1e-06
+    },
+    "fc.weight": {
+      "total": 10,
+      "dead": 0,
+      "dead_indices": [],
+      "percentage": 0.0,
+      "threshold": 1e-06
+    }
+  },
+  "threshold": 1e-06
+}
