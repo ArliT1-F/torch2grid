@@ -19,10 +19,13 @@ from torch2grid.dead_neuron_detector import (
     save_dead_neuron_report,
     visualize_dead_neurons
 )
+from torch2grid.utils import print_section
 
 
 def main():
     if len(sys.argv) < 2:
+        print("torch2grid - PyTorch Model Visualization Tool")
+        print("=" * 50)
         print("Usage: python -m torch2grid <model.pt|model.pth|model.pkl> [options]")
         print("\nOptions:")
         print("  --layers        Visualize each layer separately")
@@ -36,9 +39,19 @@ def main():
         print("  --export FORMAT Export visualizations (svg, pdf, png)")
         print("  --dead-neurons  Detect and report dead neurons")
         print("  --help          Show this help message")
+        print("\nFor more information, visit: https://github.com/ArliT1-F/torch2grid")
         return
     
     path = sys.argv[1]
+    
+    # Handle version
+    if "--version" in sys.argv or "-v" in sys.argv:
+        try:
+            from torch2grid import __version__
+            print(f"torch2grid version {__version__}")
+        except ImportError:
+            print("torch2grid version 1.0.0")
+        return
     
     # Handle plugin listing
     if "--list-plugins" in sys.argv:
@@ -66,6 +79,7 @@ def main():
         print("  --load-plugin FILE  Load custom plugin from Python file")
         print("  --export FORMAT Export to format: svg, pdf (comma-separated for multiple)")
         print("  --dead-neurons  Detect and report dead neurons in the model")
+        print("  --version, -v   Show version information.")
         print("  --help, -h      Show this help message")
         print("\nExamples:")
         print("  python -m torch2grid model.pth")
@@ -89,11 +103,26 @@ def main():
             plugin_file = sys.argv[i + 1]
             try:
                 registry.load_from_file(plugin_file)
+                print(f"Successfully loaded plugin from {plugin_file}")
+            except FileNotFoundError:
+                print(f"Error: Plugin file not found: {plugin_file}")
+                return 1
             except Exception as e:
                 print(f"Error loading plugin from {plugin_file}: {e}")
+                print("Please ensure the file contains the valid TransformerPlugin class.")
+                return 1
 
-    obj = load_torch_model(path)
-    tensors = inspect_torch_object(obj)
+    try:
+        obj = load_torch_model(path)
+        tensors = inspect_torch_object(obj)
+    except FileNotFoundError as e:
+        print(f"Error: {e}")
+        print("Please check that the model file exists and the path is correct")
+        return 1
+    except Exception as e:
+        print(f"Error loading or inspecting model: {e}")
+        print("Please ensure that the file is a valid PyTorch model (.pt, .pth, .pkl)")
+        return 1
     
     # Get plugin name if specified
     plugin_name = None
