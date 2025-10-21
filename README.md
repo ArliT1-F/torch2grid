@@ -792,3 +792,5 @@ chmod x install.sh run_tests.sh
 ## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
+
+Ps: this doesn't look as lightweight is I imagined it to be... RIP
