@@ -2,6 +2,27 @@
 
 A lightweight Python tool for visualizing PyTorch model weights and architectures. torch2grid transforms neural network parameters into intuitive visual grids, making it easy to inspect model structure, debug weight distributions, and understand layer compositions.
 
+## Quick Start
+
+```bash
+# Install
+git clone https://github.com/your-username/torch2grid.git
+cd torch2grid
+./install.sh
+
+# Basic usage
+python3 -m torch2grid model.pth
+
+# Advanced visualization
+python3 -m torch2grid model.pth --layers --histogram --conv --stats
+
+# Interactive mode
+python3 -m torch2grid model.pth --interactive
+
+# Run demo
+python3 examples/demo.py
+```
+
 ## Features
 
 - **Unified Grid Visualization**: Flattens all model weights into a single heatmap
@@ -20,9 +41,44 @@ A lightweight Python tool for visualizing PyTorch model weights and architecture
 
 ## Installation
 
+### Quick Install
+
 ```bash
-pip install -r torch2grid/requirements.txt
+# Clone the repository
+git clone https://github.com/your-username/torch2grid.git
+cd torch2grid
+
+# Run the installation script
+./install.sh
 ```
+
+### Manual Installation
+
+```bash
+# Install dependencies
+pip install -r torch2grid/requirements.txt
+
+# Install the package
+pip install -e .
+```
+
+### Development Installation
+
+```bash
+# Install with development dependencies
+pip install -e ".[dev]"
+
+# Or use the Makefile
+make install-dev
+```
+
+### Requirements
+
+- Python 3.8+
+- PyTorch 1.9.0+
+- NumPy 1.21.0+
+- Matplotlib 3.5.0+
+- Pillow 8.0.0+
 
 ## Usage
 
@@ -497,6 +553,31 @@ class MyPlugin(TransformerPlugin):
 registry.register(MyPlugin())
 ```
 
+## Recent Updates (v1.0.0)
+
+### ✅ **New Features & Improvements**
+- **Enhanced CLI**: Added `--version` flag and improved help system
+- **Progress Indicators**: Added progress bars for long operations
+- **Configuration System**: Environment variable support for customizable settings
+- **Better Error Handling**: Comprehensive error messages with helpful suggestions
+- **PyTorch 2.6+ Compatibility**: Fixed loader to handle new `weights_only=True` default
+- **Development Tools**: Added Makefile, installation scripts, and CI/CD pipeline
+- **Comprehensive Testing**: 11+ tests covering all core functionality
+- **Enhanced Documentation**: Improved docstrings and API documentation
+
+### ✅ **Project Structure Improvements**
+- **Modern Packaging**: Added `pyproject.toml` and `setup.py`
+- **Test Suite**: Organized tests in dedicated `tests/` directory
+- **Examples**: Added `examples/` directory with demo scripts
+- **CI/CD**: GitHub Actions workflow for automated testing
+- **Development Tools**: Makefile, scripts, and linting configuration
+
+### ✅ **Code Quality Enhancements**
+- **Type Hints**: Added proper type annotations throughout
+- **Error Handling**: Better error messages and edge case handling
+- **Code Organization**: Improved modular design and separation of concerns
+- **Version Management**: Added version tracking and changelog
+
 ## TODO: Upcoming Features
 
 - [x] Interactive mode with layer selection
@@ -507,41 +588,207 @@ registry.register(MyPlugin())
 - [x] Export to multiple formats (SVG, PDF)
 - [x] Dead neuron detection and reporting
 - [x] Gradient visualization support
+- [x] Enhanced CLI with arguments and progress bars
+- [x] Configuration system with environment variables
+- [x] Comprehensive test suite and CI/CD
 - [ ] Side-by-side model comparison
-- [ ] Enhanced CLI with arguments (--output, --title, --colormap)
-- [ ] Progress bar for large models
 - [ ] Multiple colormap options
 - [ ] Batch processing for multiple models
 - [ ] Config file support (YAML/JSON)
 - [ ] Web viewer for interactive exploration
+- [ ] Jupyter notebook integration
+- [ ] Real-time visualization updates
 
 ## Project Structure
 
 ```
 torch2grid/
-├── __main__.py               # CLI entry point
-├── loader.py                 # Model loading utilities
-├── inspector.py              # Tensor extraction from models
-├── transformer.py            # Grid transformation logic
-├── visualizer.py             # Single unified grid visualization
-├── layer_visualizer.py       # Layer-by-layer visualization
-├── histogram.py              # Weight distribution histograms
-├── conv_visualizer.py        # Convolution kernel visualization
-├── dead_neuron_detector.py   # Dead neuron detection and reporting
-├── gradient_visualizer.py    # Gradient flow visualization and analysis
-├── exporter.py               # Multi-format export (SVG, PDF)
-├── interactive.py            # Interactive CLI interface
-└── plugins/                  # Plugin system
-    ├── __init__.py           # Plugin exports
-    ├── base.py               # TransformerPlugin base class
-    ├── registry.py           # Plugin registry and loader
-    └── builtin.py            # Built-in transformer plugins
+├── README.md                           # Main project documentation
+├── CHANGELOG.md                        # Version history and changes
+├── setup.py                           # Legacy setup configuration
+├── pyproject.toml                     # Modern Python project configuration
+├── Makefile                           # Development task automation
+├── install.sh                         # Easy installation script
+├── run_tests.sh                       # Test runner script
+├── .gitignore                         # Git ignore rules
+├── .github/                           # GitHub configuration
+│   └── workflows/
+│       └── ci.yml                     # CI/CD pipeline
+├── torch2grid/                        # Main package directory
+│   ├── __init__.py                    # Package initialization
+│   ├── __main__.py                    # CLI entry point
+│   ├── __version__.py                 # Version information
+│   ├── config.py                      # Configuration management
+│   ├── utils.py                       # Utility functions
+│   ├── loader.py                      # Model loading utilities
+│   ├── inspector.py                   # Tensor extraction from models
+│   ├── transformer.py                 # Grid transformation logic
+│   ├── visualizer.py                  # Single unified grid visualization
+│   ├── layer_visualizer.py            # Layer-by-layer visualization
+│   ├── histogram.py                   # Weight distribution histograms
+│   ├── conv_visualizer.py             # Convolution kernel visualization
+│   ├── dead_neuron_detector.py        # Dead neuron detection and reporting
+│   ├── gradient_visualizer.py         # Gradient flow visualization
+│   ├── exporter.py                    # Multi-format export (SVG, PDF)
+│   ├── interactive.py                 # Interactive CLI interface
+│   ├── requirements.txt               # Package dependencies
+│   └── plugins/                       # Plugin system
+│       ├── __init__.py                # Plugin exports
+│       ├── base.py                    # TransformerPlugin base class
+│       ├── registry.py                # Plugin registry and loader
+│       └── builtin.py                 # Built-in transformer plugins
+├── tests/                             # Test suite
+│   ├── __init__.py                    # Test package initialization
+│   ├── test_basic.py                  # Basic functionality tests
+│   └── test_loader.py                 # Model loading tests
+├── examples/                          # Example scripts and demos
+│   ├── README.md                      # Examples documentation
+│   └── demo.py                        # Complete demonstration script
+├── grids/                             # Generated visualizations (gitignored)
+│   ├── layers/                        # Individual layer visualizations
+│   ├── histograms/                    # Weight distribution histograms
+│   ├── conv_kernels/                  # Convolution kernel visualizations
+│   └── *.png, *.svg, *.pdf           # Various output formats
+├── demo_output/                       # Demo script outputs (gitignored)
+│   ├── layers/                        # Demo layer visualizations
+│   ├── histograms/                    # Demo histograms
+│   ├── conv_kernels/                  # Demo conv kernels
+│   ├── spiral/                        # Spiral transformer outputs
+│   ├── normalized/                    # Normalized transformer outputs
+│   └── layer_separated/               # Layer separated outputs
+├── simple_cnn.pth                     # Sample CNN model
+├── tinynet.pth                        # Sample tiny model
+├── train_conv_model.py                # Model training script
+├── train_dummy_model.py               # Dummy model training
+├── test_gradients.py                  # Gradient testing script
+├── example_plugin.py                  # Example custom plugin
+└── image.png                          # Sample image
+```
+
+### Directory Organization
+
+- **Root Level**: Configuration files, documentation, and installation scripts
+- **torch2grid/**: Main package with all core functionality
+- **tests/**: Comprehensive test suite with 11+ tests
+- **examples/**: Demo scripts and usage examples
+- **grids/**: Generated visualizations (automatically created, gitignored)
+- **Sample Files**: Pre-trained models and example scripts for testing
+
+## Development
+
+### Running Tests
+
+```bash
+# Run all tests
+./run_tests.sh
+# or
+make test
+
+# Run tests with coverage
+make test-cov
+
+# Run specific test file
+python3 -m pytest tests/test_basic.py -v
+```
+
+### Code Quality
+
+```bash
+# Format code
+make format
+# or
+black torch2grid/ tests/
+
+# Lint code
+make lint
+# or
+flake8 torch2grid/ tests/
+mypy torch2grid/
+```
+
+### Development Workflow
+
+1. **Fork and clone** the repository
+2. **Install development dependencies**: `make install-dev`
+3. **Create a feature branch**: `git checkout -b feature-name`
+4. **Make changes** and add tests
+5. **Run tests**: `make test`
+6. **Format code**: `make format`
+7. **Check linting**: `make lint`
+8. **Commit changes**: `git commit -m "Add feature"`
+9. **Push and create PR**: `git push origin feature-name`
+
+### Available Make Commands
+
+```bash
+make help          # Show all available commands
+make install       # Install the package
+make install-dev   # Install with development dependencies
+make test          # Run tests
+make test-cov      # Run tests with coverage
+make lint          # Run linters
+make format        # Format code
+make clean         # Clean build artifacts
+make demo          # Run demo with sample models
 ```
 
 ## Contributing
 
-Contributions are welcome! Feel free to open issues or submit pull requests.
+Contributions are welcome! Please follow these steps:
+
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Make** your changes and add tests
+4. **Run** the test suite (`make test`)
+5. **Format** your code (`make format`)
+6. **Commit** your changes (`git commit -m 'Add amazing feature'`)
+7. **Push** to the branch (`git push origin feature/amazing-feature`)
+8. **Open** a Pull Request
+
+### Development Guidelines
+
+- Follow PEP 8 style guidelines
+- Add tests for new functionality
+- Update documentation for new features
+- Ensure all tests pass before submitting PR
+- Use meaningful commit messages
+
+## Troubleshooting
+
+### Common Issues
+
+**ImportError: No module named 'torch'**
+```bash
+# Install PyTorch first
+pip install torch torchvision
+# or
+pip install -r torch2grid/requirements.txt
+```
+
+**Permission denied when running scripts**
+```bash
+# Make scripts executable
+chmod +x install.sh run_tests.sh
+```
+
+**PyTorch 2.6+ loading errors**
+- The loader automatically handles PyTorch 2.6+ security changes
+- If you see warnings about `weights_only`, this is normal and handled automatically
+
+**No display/GUI issues**
+- torch2grid automatically detects headless environments
+- Set `MPLBACKEND=Agg` if you encounter display issues
+
+**Memory issues with large models**
+- Use `--layers` to visualize layers separately instead of unified grid
+- Consider using `--plugin layer_separated` for better memory management
+
+### Getting Help
+
+- **Issues**: [GitHub Issues](https://github.com/your-username/torch2grid/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/your-username/torch2grid/discussions)
+- **Documentation**: Check the examples in `examples/` directory
 
 ## License
 
-MIT
+MIT License - see [LICENSE](LICENSE) file for details.
